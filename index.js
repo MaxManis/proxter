@@ -24,17 +24,22 @@ const handleReq = async (req, res, method) => {
     const response = await nodeFetch(`${targetUrl}${targetPath}`, {
       method,
       headers: getHeaders(req.headers),
-      body: Object.keys(req.body || {}).length
-        ? JSON.stringify(req.body)
-        : undefined,
+      body:
+        method.toLowerCase() === "post"
+          ? JSON.stringify(req.body || {})
+          : undefined,
     });
 
     res.status(response.status);
 
+    const contentTypeHeader = response.headers.get("content-type");
+    const contentType = Array.isArray(contentTypeHeader)
+      ? contentTypeHeader.join("")
+      : contentTypeHeader;
     let data = null;
-    if (response.headers["content-type"]?.includes("json")) {
+    if (contentType && contentType.includes("json")) {
       data = await response.json();
-    } else if (response.headers["content-type"]?.includes("text")) {
+    } else if (contentType && contentType.includes("text")) {
       data = await response.text();
     }
 
