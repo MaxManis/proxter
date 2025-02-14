@@ -3,6 +3,20 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const nodeFetch = require("node-fetch");
 
+const getHeaders = (rawHeaders) => {
+  const headers = {};
+  const keys = Object.keys(rawHeaders).filter(
+    (k) =>
+      k.toLowerCase().includes("x-") ||
+      k.toLowerCase().includes("content-type"),
+  );
+  for (let i = 0; i < keys.length; i++) {
+    headers[keys[i]] = rawHeaders[keys[i]];
+  }
+
+  return headers;
+};
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -14,9 +28,7 @@ app.get("*", async (req, res) => {
     const targetPath = req.path;
     const response = await nodeFetch(`${targetUrl}${targetPath}`, {
       method: "GET",
-      headers: {
-        ...req.headers,
-      },
+      headers: getHeaders(req.headers),
     });
     const data = await response.json();
 
@@ -33,9 +45,7 @@ app.post("*", async (req, res) => {
     const targetPath = req.path;
     const response = await nodeFetch(`${targetUrl}${targetPath}`, {
       method: "POST",
-      headers: {
-        ...req.headers,
-      },
+      headers: getHeaders(req.headers),
       body: JSON.stringify(req.body),
     });
     const data = await response.json();
@@ -53,9 +63,7 @@ app.put("*", async (req, res) => {
     const targetPath = req.path;
     const response = await nodeFetch(`${targetUrl}${targetPath}`, {
       method: "PUT",
-      headers: {
-        ...req.headers,
-      },
+      headers: getHeaders(req.headers),
     });
     const data = await response.json();
 
@@ -72,9 +80,7 @@ app.delete("*", async (req, res) => {
     const targetPath = req.path;
     const response = await nodeFetch(`${targetUrl}${targetPath}`, {
       method: "DELETE",
-      headers: {
-        ...req.headers,
-      },
+      headers: getHeaders(req.headers),
     });
     const data = await response.json();
 
@@ -85,7 +91,7 @@ app.delete("*", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3005;
 app.listen(PORT, () => {
   console.log(`Server running on: http://localhost:${PORT}`);
 });
