@@ -17,79 +17,47 @@ const getHeaders = (rawHeaders) => {
   return headers;
 };
 
+const handleReq = async (req, res, method) => {
+  try {
+    const targetUrl = req.query["proxter"];
+    const targetPath = req.path;
+    const response = await nodeFetch(`${targetUrl}${targetPath}`, {
+      method,
+      headers: getHeaders(req.headers),
+      body: Object.keys(req.body || {}).length
+        ? JSON.stringify(req.body)
+        : undefined,
+    });
+
+    res.status(response.status);
+
+    let data = null;
+    if (response.headers["content-type"]?.includes("json")) {
+      data = await response.json();
+    } else if (response.headers["content-type"]?.includes("text")) {
+      data = await response.text();
+    }
+
+    if (data) {
+      res.send(data);
+    } else {
+      res.end();
+    }
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(500);
+  }
+};
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
-app.get("*", async (req, res) => {
-  try {
-    const targetUrl = req.query["proxter"];
-    const targetPath = req.path;
-    const response = await nodeFetch(`${targetUrl}${targetPath}`, {
-      method: "GET",
-      headers: getHeaders(req.headers),
-    });
-    const data = await response.json();
-
-    res.status(200).send(data);
-  } catch (err) {
-    console.error(err);
-    res.sendStatus(500);
-  }
-});
-
-app.post("*", async (req, res) => {
-  try {
-    const targetUrl = req.query["proxter"];
-    const targetPath = req.path;
-    const response = await nodeFetch(`${targetUrl}${targetPath}`, {
-      method: "POST",
-      headers: getHeaders(req.headers),
-      body: JSON.stringify(req.body),
-    });
-    const data = await response.json();
-
-    res.status(200).send(data);
-  } catch (err) {
-    console.error(err);
-    res.sendStatus(500);
-  }
-});
-
-app.put("*", async (req, res) => {
-  try {
-    const targetUrl = req.query["proxter"];
-    const targetPath = req.path;
-    const response = await nodeFetch(`${targetUrl}${targetPath}`, {
-      method: "PUT",
-      headers: getHeaders(req.headers),
-    });
-    const data = await response.json();
-
-    res.status(200).send(data);
-  } catch (err) {
-    console.error(err);
-    res.sendStatus(500);
-  }
-});
-
-app.delete("*", async (req, res) => {
-  try {
-    const targetUrl = req.query["proxter"];
-    const targetPath = req.path;
-    const response = await nodeFetch(`${targetUrl}${targetPath}`, {
-      method: "DELETE",
-      headers: getHeaders(req.headers),
-    });
-    const data = await response.json();
-
-    res.status(200).send(data);
-  } catch (err) {
-    console.error(err);
-    res.sendStatus(500);
-  }
-});
+app.get("*", async (req, res) => handleReq(req, res, "GET"));
+app.post("*", async (req, res) => handleReq(req, res, "POST"));
+app.put("*", async (req, res) => handleReq(req, res, "PUT"));
+app.delete("*", async (req, res) => handleReq(req, res, "DELETE"));
 
 const PORT = process.env.PORT || 3005;
 app.listen(PORT, () => {
